@@ -28,7 +28,7 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     N : int 
         the number of nodes.
     epsilon : float 
-        Accuracy for iterative process.    
+        Accuracy of iterative process.    
 
     Returns function u(x, t_end)
     -------
