@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N):
+def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsilon):
     """
     Implicit scheme for numerical solution of the Dirichle 
     problem for one-dimensional parabolic equation.
@@ -27,6 +27,8 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N):
         the length of time step.
     N : int 
         the number of nodes.
+    epsilon : float 
+        Accuracy for iterative process.    
 
     Returns function u(x, t_end)
     -------
@@ -75,9 +77,13 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N):
 
     # Solution function
     u = np.zeros(N)
+    # Array for finding error
+    error = np.zeros(N)
     # Initial condition
     for i in range(N):
         u[i] = u_init(x[i])
+    # Array for iterative process
+    u_iter = u.copy()
     # Boundary conditions
     # Left
     u[0] = u_left(0, t)
@@ -92,24 +98,34 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N):
     c = np.zeros(N-3)
 
     while t < t_end:
-        for k in range(10):
+        # Iterative process
+        while True:
+            u_iter_old = u_iter.copy()
             # Filling RSE
             for i in range(1, N-3):
-                RP[i] = u[i+1]+Q(u[i+1])*tau
-            RP[0] = u[1]+tau*Q(u[1])+C/2*(D(u[1])+D(u[0]))*u_left(0, t+tau)
-            RP[N-3] = u[N-2]+tau*Q(x[N-2])+C/2*(D(u[N-1]) +
-                                                D(u[N-2]))*u_right(L, t+tau)
+                RP[i] = u[i+1]+Q(u_iter[i+1])*tau
+            RP[0] = u[1]+tau*Q(u_iter[1])+C/2 * \
+                (D(u_iter[1])+D(u_iter[0]))*u_left(0, t+tau)
+            RP[N-3] = u[N-2]+tau*Q(u_iter[N-2])+C/2*(D(u_iter[N-1]) +
+                                                     D(u_iter[N-2]))*u_right(L, t+tau)
+
             # Filling lower diagonal
             for i in range(N-3):
-                a[i] = -C/2*(D(u[i+2])+D(u[i+1]))
+                a[i] = -C/2*(D(u_iter[i+2])+D(u_iter[i+1]))
             # Filling middle diagonal
             for i in range(N-2):
-                b[i] = 1 + C/2*(D(u[i+2])+2*D(u[i+1])+D(u[i]))
+                b[i] = 1 + C/2*(D(u_iter[i+2])+2*D(u_iter[i+1])+D(u_iter[i]))
             # Filling upper diagonal
             for i in range(N-3):
-                c[i] = -C/2*(D(u[i+2])+D(u[i+1]))
+                c[i] = -C/2*(D(u_iter[i+2])+D(u_iter[i+1]))
             # Solving system of equations
-            u[1:N-1] = Tridiagonal_solver(a, b, c, RP)
-            k=k+1
+            u_iter[1:N-1] = Tridiagonal_solver(a, b, c, RP)
+            # Finding error
+            for i in range(N):
+                error[i] = abs(u_iter_old[i]-u_iter[i])
+            if max(error) < epsilon:
+                break
+        error = np.zeros(N)
+        u = u_iter.copy()
         t += tau
     return u
