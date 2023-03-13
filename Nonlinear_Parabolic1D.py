@@ -67,13 +67,13 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     # Spatial step
     h = L/(N-1)
 
-    # const
+    # consts
 
     C = tau/h**2
     # Spatial grid
     x = np.linspace(0, L, N)
     # Initial time
-    t = 0
+    t = 0.1
 
     # Solution function
     u = np.zeros(N)
@@ -88,7 +88,7 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     # Left
     u[0] = u_left(0, t)
     # Right
-    u[N-1] = u_right(0, t)
+    u[N-1] = u_right(L, t)
 
     # Array for RSE
     RP = np.zeros(N-2)
@@ -100,6 +100,7 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     while t < t_end:
         # Iterative process
         while True:
+            # Array for comparison of accuracy
             u_iter_old = u_iter.copy()
             # Filling RSE
             for i in range(1, N-3):
@@ -108,7 +109,6 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
                 (D(u_iter[1])+D(u_iter[0]))*u_left(0, t+tau)
             RP[N-3] = u[N-2]+tau*Q(u_iter[N-2])+C/2*(D(u_iter[N-1]) +
                                                      D(u_iter[N-2]))*u_right(L, t+tau)
-
             # Filling lower diagonal
             for i in range(N-3):
                 a[i] = -C/2*(D(u_iter[i+2])+D(u_iter[i+1]))
@@ -123,9 +123,14 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
             # Finding error
             for i in range(N):
                 error[i] = abs(u_iter_old[i]-u_iter[i])
+            # Loop exit
             if max(error) < epsilon:
                 break
-        error = np.zeros(N)
+        # New boundary conditions
+        u_iter[0] = u_left(0, t+tau)
+        u_iter[N-1] = u_right(L, t+tau)
+        # Array on the next time layer
         u = u_iter.copy()
         t += tau
+
     return u
