@@ -82,14 +82,16 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     # Initial condition
     for i in range(N):
         u[i] = u_init(x[i])
-    # Array for iterative process
-    u_iter = u.copy()
+
     # Boundary conditions
     # Left
     u[0] = u_left(0, t)
     # Right
     u[N-1] = u_right(L, t)
 
+    # Array for iterative process
+    u_iter = u.copy()
+    
     # Array for RSE
     RP = np.zeros(N-2)
     # Arrays for tridiagonal matrix
@@ -97,7 +99,7 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
     b = np.zeros(N-2)
     c = np.zeros(N-3)
 
-    while t < t_end:
+    while t <= t_end:
         # Iterative process
         while True:
             # Array for comparison of accuracy
@@ -132,5 +134,5 @@ def Nonlinear_parabolic1D(D, Q, u_init, u_left, u_right, t_end, L, tau, N, epsil
         # Array on the next time layer
         u = u_iter.copy()
         t += tau
-
+    print(t)
     return u
